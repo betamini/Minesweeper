@@ -1,0 +1,5 @@
+# Minesweeper
+
+## Mechanics
+
+- 

@@ -1,0 +1,154 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <canvas id="display" width="10" height="10"></canvas>
+
+    <script>
+const cellsx = 20;
+const cellsy = 20;
+const cellsize = 40;
+const states = {marked: 1, hidden: 2, opened: 3};
+var display = document.getElementById("display");
+display.width = cellsx * cellsize;
+display.height = cellsy * cellsize;
+ctx = display.getContext("2d");
+ctx.fillStyle = "#111111";
+
+
+
+var cells = {};
+for(var i = 0; i < cellsx; i++){
+  cells[i] = {};
+  for(var j = 0; j < cellsy; j++){
+    var cell = {
+      x: i,
+      y: j,
+      size: 40,
+      padding: 1,
+      outerwidth: 4,
+      innercolor: "#b8b8b8",
+      outercolor: "#cccccc",
+      mine: Math.random() > 0.84,
+      state: states.hidden,
+      adjasentmines: null
+    };
+    cells[i][j] = cell;
+  }
+}
+
+function getAdjasentTo(cell){
+  let x = cell.x;
+  let y = cell.y;
+  let adjasent = [
+    getCell(x+1, y+1) , getCell(x, y+1), getCell(x-1, y+1),
+    getCell(x+1, y)   ,                  getCell(x-1, y)  ,
+    getCell(x+1, y-1) , getCell(x, y-1), getCell(x-1, y-1)
+  ];
+  if (cell.adjasentmines == null){
+    cell.adjasentmines = 0;
+    adjasent.forEach(adj => adj && adj.mine && (cell.adjasentmines++));
+  }
+  return adjasent;
+} 
+
+function draw(cell){
+  drawRect("#000000", 0, cell.x, cell.y);
+  if (cell.state == states.opened){
+    drawRect("#F5F5F5", 1, cell.x, cell.y)
+    if (cell.mine){
+      ctx.font = "40px Consolas";
+      ctx.fillStyle = "#00D060";
+      ctx.fillText("☢", cell.x * cell.size + 3, (cell.y + 1) * cell.size - 6);
+    }else{
+      ctx.font = "40px Consolas";
+      ctx.fillStyle = "#000000";
+      if (cell.adjasentmines){
+        ctx.fillText(cell.adjasentmines.toString(), (cell.x) * cell.size + 10, (cell.y + 1) * cell.size - 5);
+      }
+    }
+  }else{
+    drawRect(cell.outercolor, cell.padding, cell.x, cell.y);
+    drawRect(cell.innercolor, cell.padding + cell.outerwidth, cell.x, cell.y);
+    if(cell.state == states.marked){
+      ctx.fillStyle = "#FF0000";
+      ctx.font = "30px Consolas";
+      ctx.fillText("🚩", cell.x * cell.size + 3, (cell.y + 1) * cell.size - 10);
+    }
+  }
+}
+
+function drawRect(color, margin, x, y) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * cellsize + margin, y * cellsize + margin, cellsize - 2 * margin, cellsize - 2 * margin);
+}
+
+function changeStateOf(cell, tostate){
+  cell.state = tostate;
+  draw(cell);
+}
+
+function open(cellstoopen){
+  cellstoopen.forEach(cell => {
+    if (cell){ 
+      if (cell.state != states.opened){
+        let adjasent = getAdjasentTo(cell);
+        changeStateOf(cell, states.opened);
+        if (cell.adjasentmines == 0) {
+          open(adjasent);
+        }
+      }
+    }
+  });
+}
+
+function fullDraw(){
+  for (const x in cells) {
+    for (const y in cells[x]) {
+      draw(cells[x][y]);
+    }
+  }
+}
+
+display.onclick = ({offsetX: x, offsetY: y, ctrlKey}) => {
+  console.log(x.toString() + "     " + y.toString());
+  let cellx = Math.floor(x/40);
+  let celly = Math.floor(y/40);
+  let cell = getCell(cellx, celly);
+  if (ctrlKey) {
+    if (cell.state == states.hidden){
+      changeStateOf(cell, states.marked)
+      cell.marked = false;
+    }else if (cell.state == states.marked){
+      changeStateOf(cell, states.hidden);
+    }
+    cell.changed = true;
+  }else{
+    if (cell) {
+      console.log(cellx.toString() + "     " + celly.toString());
+      console.log(cell);
+      if (cell.state == states.hidden){
+        open([cell]);
+      }else if (cell.state == states.marked){
+        changeStateOf(cell, states.hidden);
+      }
+    }
+  }
+};
+fullDraw();
+
+//display.onclick = event => console.log(event)};
+
+function getCell(cellx, celly){
+  var cell;
+  if (cellx < cellsx && cellx > -1 && celly < cellsy && celly > -1){
+    cell = cells[cellx][celly];
+  }else{
+    console.warn("Cell out of range");
+  }
+  return cell;
+}
+
+    </script>
+</body>
+</html>
