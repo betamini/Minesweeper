@@ -134,16 +134,33 @@ function fullDraw(){
   }
 }
 
-display.onclick = ({offsetX: x, offsetY: y, ctrlKey}) => {
+display.onmouseup = evt => {
+  console.log(evt);
+  var {offsetX: x, offsetY: y, ctrlKey, button} = evt;
+  let leftButton = 0;
+  let rightButton = 2;
   let cell = mousePointCell;
-  console.log(cell);
   if (cell) {
     console.log(cell);
-    if (cell.state == states.hidden){
-      open([cell]);
-      fail && fullDraw();
-    }else if (cell.state == states.marked){
-      changeStateOf(cell, states.hidden);
+
+    if (button == leftButton){
+      if (cell.state == states.hidden){
+        open([cell]);
+        fail && fullDraw();
+      }else if (cell.state == states.marked){
+        changeStateOf(cell, states.hidden);
+      }
+    }else if(button == rightButton){
+      if (cell.state == states.hidden){
+        changeStateOf(cell, states.marked)
+      }else{
+        let adjasent = getAdjasentTo(cell);
+        adjasent.forEach((value, index, array) => {
+          value.state == states.marked && (array[index] = null);
+        });
+        open(adjasent);
+        fail && fullDraw();
+      }
     }
   }
 };
@@ -165,6 +182,11 @@ document.onkeyup = event => {
       }
     }
   }
+};
+
+display.oncontextmenu = function(e) {
+  e.preventDefault();
+  e.stopPropagation();
 };
 //display.onkeypress = event => console.log(event);
 //display.onclick = event => console.log(event)};
