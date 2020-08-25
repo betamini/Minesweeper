@@ -10,31 +10,13 @@ const cellsy = 20;
 const cellsize = 40;
 const states = {marked: 1, hidden: 2, opened: 3};
 var mousePointCell;
+var cells = {};
 var display = document.getElementById("display");
 display.width = cellsx * cellsize;
 display.height = cellsy * cellsize;
 ctx = display.getContext("2d");
 ctx.fillStyle = "#111111";
 
-var cells = {};
-for(var i = 0; i < cellsx; i++){
-  cells[i] = {};
-  for(var j = 0; j < cellsy; j++){
-    var cell = {
-      x: i,
-      y: j,
-      size: 40,
-      padding: 1,
-      outerwidth: 4,
-      innercolor: "#b8b8b8",
-      outercolor: "#cccccc",
-      mine: Math.random() > 0.84,
-      state: states.hidden,
-      adjasentmines: null
-    };
-    cells[i][j] = cell;
-  }
-}
 
 function getAdjasentTo(cell){
   let x = cell.x;
@@ -81,6 +63,7 @@ function drawRect(color, margin, x, y) {
   ctx.fillStyle = color;
   ctx.fillRect(x * cellsize + margin, y * cellsize + margin, cellsize - 2 * margin, cellsize - 2 * margin);
 }
+
 var fail;
 function changeStateOf(cell, tostate){
   cell.state = tostate;
@@ -136,51 +119,56 @@ function fullDraw(){
 
 display.onmouseup = evt => {
   console.log(evt);
-  var {offsetX: x, offsetY: y, ctrlKey, button} = evt;
   let leftButton = 0;
   let rightButton = 2;
+
+  if (evt.button == leftButton){
+    processInput("leftmousebutton");
+  }else if(evt.button == rightButton){
+    processInput("rightmousebutton");
+  }
+};
+
+function processInput(type){
   let cell = mousePointCell;
   if (cell) {
-    console.log(cell);
-
-    if (button == leftButton){
+    if (type == "leftmousebutton"){
       if (cell.state == states.hidden){
         open([cell]);
         fail && fullDraw();
-      }else if (cell.state == states.marked){
-        changeStateOf(cell, states.hidden);
+      }//else if (cell.state == states.marked){
+      //  changeStateOf(cell, states.hidden);
+      //}
+    }
+    if (type == "Space"){
+      if(cell.state == states.opened){
+        let adjasent = getAdjasentTo(cell);
+        let markes = 0;
+        adjasent.forEach((value, index, array) => {
+          value && value.state == states.marked && markes++;
+          value && value.state != states.hidden && (array[index] = null);
+        });
+        if (markes == cell.adjasentmines){
+          open(adjasent);
+        }
+        fail && fullDraw();
       }
-    }else if(button == rightButton){
+    }
+    if (type == "rightmousebutton" || type == "Space"){
       if (cell.state == states.hidden){
         changeStateOf(cell, states.marked)
-      }else{
+      }else if (cell.state == states.marked){
+        changeStateOf(cell, states.hidden)
         let adjasent = getAdjasentTo(cell);
-        adjasent.forEach((value, index, array) => {
-          value.state == states.marked && (array[index] = null);
-        });
-        open(adjasent);
-        fail && fullDraw();
       }
     }
   }
-};
+}
 fullDraw();
 
 document.onkeyup = event => {
-  let cell = mousePointCell;
-  if (cell){
-    if (event.code == "Space"){
-      if (cell.state == states.hidden){
-        changeStateOf(cell, states.marked)
-      }else{
-        let adjasent = getAdjasentTo(cell);
-        adjasent.forEach((value, index, array) => {
-           value.state == states.marked && (array[index] = null);
-        });
-        open(adjasent);
-        fail && fullDraw();
-      }
-    }
+  if (event.code == "Space"){
+    processInput("Space");
   }
 };
 
@@ -197,6 +185,7 @@ function setMousePos(canvas, evt) {
   let celly = Math.floor((evt.clientY - rect.top) / 40);
   mousePointCell = getCell(cellx, celly);
 }
+
 display.addEventListener('mousemove', function(evt) {
   let prevmousePointCell = mousePointCell;
   setMousePos(display, evt);
@@ -204,6 +193,7 @@ display.addEventListener('mousemove', function(evt) {
     console.log(mousePointCell);
   }
 });
+
 display.addEventListener('mouseleave', function(evt) {
   let prevmousePointCell = mousePointCell;
   mousePointCell = null;
@@ -223,5 +213,5 @@ function getCell(cellx, celly){
 }
 
     </script>
-</body>
+  </body>
 </html>
