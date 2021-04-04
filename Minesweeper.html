@@ -136,9 +136,7 @@ function processInput(type){
       if (cell.state == states.hidden){
         open([cell]);
         fail && fullDraw();
-      }//else if (cell.state == states.marked){
-      //  changeStateOf(cell, states.hidden);
-      //}
+      }
     }
     if (type == "Space"){
       if(cell.state == states.opened){
